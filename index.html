@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>0.0</title>
-  <meta name="description" content="互動小視窗（含啵聲、叮聲與禮物揭曉特效）。" />
+  <meta name="description" content="互動小視窗（含音效啟動、啵聲、叮聲與禮物揭曉特效）。" />
   <link rel="icon" href="data:," />
   <style>
     :root{
@@ -16,7 +16,7 @@
       min-height:100%;
       background:linear-gradient(180deg,var(--bg1),var(--bg2),#fff);
       display:flex;align-items:center;justify-content:center;padding:24px;
-      font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans","Apple Color Emoji","Segoe UI Emoji";
+      font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans";
       color:var(--text);
     }
     .card{width:min(640px,92vw);background:var(--card);border:1px solid var(--border);
@@ -31,142 +31,166 @@
     .heart{font-size:28px}
     .giftTip{margin:6px 0 8px;font-size:13px;color:var(--sub)}
     .giftImg{
-      max-height:360px;
-      max-width:90%;
-      width:auto;
-      height:auto;
-      display:block;
-      margin:0 auto;
-      border-radius:12px;
-      border:1px solid var(--border);
-      object-fit:contain;
-      filter:blur(6px);
-      transform:scale(.92);
-      transition:filter .25s, transform .25s;
-      cursor:pointer
+      max-height:360px; max-width:90%; width:auto; height:auto; display:block; margin:0 auto;
+      border-radius:12px; border:1px solid var(--border); object-fit:contain;
+      filter:blur(6px); transform:scale(.92); transition:filter .25s, transform .25s; cursor:pointer
     }
     .giftImg.revealed{filter:blur(0);transform:scale(1);cursor:default}
+
+    /* 開場畫面 */
+    .center{display:flex;align-items:center;justify-content:center;min-height:200px;flex-direction:column}
+    .startBtn{
+      appearance:none; border:1px solid var(--border); background:#fff; color:var(--text);
+      padding:14px 18px; border-radius:999px; font-weight:700; cursor:pointer;
+      box-shadow:0 14px 28px rgba(162,28,175,.15); transition:transform .08s, box-shadow .15s;
+    }
+    .startBtn:hover{transform:translateY(-1px); box-shadow:0 18px 36px rgba(162,28,175,.22)}
+    .hint{margin-top:10px; font-size:12px; color:var(--sub)}
+    .error{margin-top:12px;color:#b91c1c;font-size:13px;text-align:center}
   </style>
 </head>
 <body>
   <div class="card" id="app"></div>
 
   <script>
-    // ====== 流程設定 ======
-    const flow = [
-      { id:1, q:"第一題：你星期五要跟我出去嗎？",
-        opts:[
-          { id:"1a", label:"好，我願意", next:2 },
-          { id:"1b", label:"再看看", result:":(" },
-        ] },
-      { id:2, q:"第二題：那你星期五晚上要跟我一起睡覺嗎？",
-        opts:[
-          { id:"2a", label:"好 ><", next:3 },
-          { id:"2b", label:"不行，我媽媽會生氣。", result:":(" },
-        ] },
-      { id:3, q:"第三題：那你要帶幾個套套？",
-        opts:[
-          { id:"3a", label:"4個以上", next:4 },
-          { id:"3b", label:"其他", result:"太少了，再給你一次機會。", next:3 },
-        ] },
-      { id:4, q:"第四題：那你喜歡我嗎？",
-        opts:[
-          { id:"4a", label:"很喜翻", result:"我也是", next:5 },
-          { id:"4b", label:"不太確定，可能要再觀察一下", result:"好ㄅQQ" },
-          { id:"4c", label:"不喜翻", result:"可惡" },
-        ] },
-      { id:5, q:"第五題：那你要跟我交往嗎？",
-        opts:[
-          { id:"5a", label:"好", result:"0.0 <3 <3 <3", next:6 },
-          { id:"5b", label:"不好", result:"GAMEOVER" },
-          { id:"5c", label:"我再想想", result:"GAMEOVER" },
-        ] },
-      { id:6, q:"第六題：送你一個禮物！",
-        opts:[
-          { id:"6a", label:"是什麼！！！？？？", result:"🎁 看看這個！", giftNow:true },
-          { id:"6b", label:"不想知道", result:"管你的 😤", giftDelay:1000 },
-        ] },
-    ];
+    (function () {
+      const app = document.getElementById('app');
+      const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text!=null) x.textContent = text; return x; };
 
-    // ====== 音效設定 ======
-    const clickSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c8f10b06a.mp3?filename=bubble-pop-1-2022-03-15.mp3"); // 啵
-    const resultSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/09/audio_1b7f2fbd88.mp3?filename=correct-answer-2-86842.mp3"); // 叮
-    clickSound.volume = 0.4;
-    resultSound.volume = 0.5;
+      // ------ 流程設定 ------
+      const flow = [
+        { id:1, q:"第一題：你星期五要跟我出去嗎？",
+          opts:[ { id:"1a", label:"好，我願意><", next:2 }, { id:"1b", label:"再看看@@", result:":(" } ] },
+        { id:2, q:"第二題：那你星期五晚上要跟我一起睡覺嗎？",
+          opts:[ { id:"2a", label:"好 ><", next:3 }, { id:"2b", label:"不行，我媽媽會生氣！。", result:":(" } ] },
+        { id:3, q:"第三題：那你要帶幾個套套？",
+          opts:[ { id:"3a", label:"4個以上", next:4 }, { id:"3b", label:"其他", result:"太少了，再給你一次機會。", next:3 } ] },
+        { id:4, q:"第四題：那你喜歡我嗎？",
+          opts:[ { id:"4a", label:"很喜翻👉👈", result:"我也是ㄛ", next:5 },
+                 { id:"4b", label:"不太確定，可能要再觀察一下！", result:"好ㄅQQ" },
+                 { id:"4c", label:"不喜翻QQ", result:"可惡" } ] },
+        { id:5, q:"第五題：那你要跟我交往嗎？",
+          opts:[ { id:"5a", label:"好！", result:"0.0 <3 <3 <3", next:6 },
+                 { id:"5b", label:"不好！", result:"GAMEOVER" },
+                 { id:"5c", label:"我再想想ㄅ，你不要太agressive啦！", result:"GAMEOVER" } ] },
+        { id:6, q:"第六題：送你一個禮物！",
+          opts:[ { id:"6a", label:"是什麼！！！？？？", result:"🎁 看看這個！", giftNow:true },
+                 { id:"6b", label:"不想知道！", result:"管你的 😤", giftDelay:1000 } ] },
+      ];
 
-    const GIFT_SRC = "./sagami.png"; // 或 Base64 圖
+      // ------ 音效（啵 / 叮） ------
+      const clickSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c8f10b06a.mp3?filename=bubble-pop-1-2022-03-15.mp3");
+      const resultSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/09/audio_1b7f2fbd88.mp3?filename=correct-answer-2-86842.mp3");
+      clickSound.volume = 0.6;   // 啵 ～ 稍大
+      resultSound.volume = 0.9;  // 叮 ～ 明顯
+      function playClick(){ try{ clickSound.currentTime=0; clickSound.play(); }catch(e){} }
+      function playResult(){ try{ resultSound.currentTime=0; resultSound.play(); }catch(e){} }
 
-    const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text) x.textContent = text; return x; };
-    const app = document.getElementById('app');
-    let currentId = 1, resultMsg = null, pendingNext, finished=false, showGift=false, giftRevealed=false;
+      // 禮物圖片（上傳 sagami.png 到 repo 根目錄，或改成 Base64）
+      const GIFT_SRC = "./sagami.png"; // 也可改成 "data:image/png;base64,...."
 
-    function playClick(){ clickSound.currentTime=0; clickSound.play().catch(()=>{}); }
-    function playResult(){ resultSound.currentTime=0; resultSound.play().catch(()=>{}); }
+      // ------ 狀態 ------
+      let soundUnlocked = false;
+      let currentId = 1, resultMsg = null, pendingNext, finished=false, showGift=false, giftRevealed=false;
 
-    function render(){
-      app.innerHTML='';
-      const step=flow.find(s=>s.id===currentId);
-      if(!finished && step){
-        app.appendChild(el('h1',null,step.q));
-        const box=el('div','options');
-        step.opts.forEach(opt=>{
-          const b=el('button','btn');
-          b.innerHTML=`<div>${opt.label}</div>`;
-          b.onclick=()=>{ playClick(); handleOption(opt); };
-          box.appendChild(b);
-        });
+      // ------ 開場：音效啟動畫面 ------
+      function renderStart(){
+        app.innerHTML = '';
+        const box = el('div','center');
+        const btn = el('button','startBtn','🔊 點我開啟音效');
+        btn.onclick = async () => {
+          try{
+            // 先嘗試播放，作為使用者互動的回應
+            clickSound.currentTime = 0;
+            await clickSound.play();
+          }catch(e){}
+          soundUnlocked = true;
+          render(); // 進入第一題
+        };
+        box.appendChild(btn);
+        box.appendChild(el('div','hint','（開啟後才會有啵/叮音效）'));
         app.appendChild(box);
-        if(resultMsg) app.appendChild(el('div','msg',resultMsg));
-        return;
       }
-      const end=el('div','end');
-      if(!showGift){
-        end.appendChild(el('div','heart','😖'));
-        if(resultMsg) end.appendChild(el('div','msg',resultMsg));
-        end.appendChild(el('div','msg','謝謝你的回答！'));
-        app.appendChild(end);
-      }else{
-        end.appendChild(el('div','giftTip','👉 再點擊圖片一次'));
-        const img=new Image();
-        img.src=GIFT_SRC; img.alt="gift";
-        img.className='giftImg'+(giftRevealed?' revealed':'');
-        img.onclick=()=>{ playClick(); if(!giftRevealed){ giftRevealed=true; img.classList.add('revealed'); } };
-        app.appendChild(end);
-        end.appendChild(img);
-      }
-    }
 
-    function handleOption(opt){
-      resultMsg=opt.result||null;
-      if(resultMsg) playResult(); // 顯示結果時播放叮聲
+      function render(){
+        if (!soundUnlocked) { renderStart(); return; }
 
-      if(typeof opt.next==='number'){
-        pendingNext=opt.next;
-        if(!opt.result){ currentId=opt.next; pendingNext=undefined; render(); return; }
-        render();
-        setTimeout(()=>{
-          resultMsg=null; currentId=pendingNext; pendingNext=undefined; render();
-        },1200);
-      }else{
-        if(opt.giftNow){
-          playResult(); // 🎁 看看這個！也叮
-          finished=true; showGift=true; giftRevealed=false;
-          setTimeout(()=>{ resultMsg=null; render(); },800);
-          render(); return;
-        }
-        if(opt.giftDelay){
-          finished=true; showGift=false; giftRevealed=false;
-          render();
-          setTimeout(()=>{ showGift=true; render(); },opt.giftDelay);
+        app.innerHTML='';
+        const step = flow.find(s => s.id === currentId);
+
+        if (!finished && step){
+          app.appendChild(el('h1', null, step.q));
+          const box = el('div','options');
+          step.opts.forEach(opt => {
+            const b = el('button','btn'); b.innerHTML = `<div>${opt.label}</div>`;
+            b.onclick = () => { playClick(); handleOption(opt); };
+            box.appendChild(b);
+          });
+          app.appendChild(box);
+          if (resultMsg) app.appendChild(el('div','msg',resultMsg));
           return;
         }
-        if(!opt.result) resultMsg='謝謝你的回覆！';
-        finished=true; showGift=false; render();
+
+        const end = el('div','end');
+        if (!showGift){
+          end.appendChild(el('div','heart','😖'));
+          if (resultMsg) end.appendChild(el('div','msg',resultMsg));
+          end.appendChild(el('div','msg','謝謝你的回答！'));
+          app.appendChild(end);
+        } else {
+          end.appendChild(el('div','giftTip','👉 再點擊圖片一次！ Plus,下次教我三道門問題！'));
+          const img = new Image();
+          img.src = GIFT_SRC; img.alt = "gift";
+          img.className = 'giftImg' + (giftRevealed ? ' revealed' : '');
+          img.onclick = () => { playClick(); if (!giftRevealed){ giftRevealed = true; img.classList.add('revealed'); } };
+          app.appendChild(end);
+          end.appendChild(img);
+        }
       }
-    }
-    render();
+
+      function handleOption(opt){
+        resultMsg = opt.result || null;
+        if (resultMsg) playResult(); // 顯示結果時播放叮聲（含🎁）
+
+        if (typeof opt.next === 'number'){
+          pendingNext = opt.next;
+          if (!opt.result){
+            currentId = opt.next;
+            pendingNext = undefined;
+            render();
+            return;
+          }
+          render(); // 先顯示結果
+          setTimeout(() => {
+            resultMsg = null;
+            currentId = pendingNext;
+            pendingNext = undefined;
+            render();
+          }, 1200);
+        } else {
+          if (opt.giftNow){
+            playResult(); // 🎁 也叮
+            finished = true; showGift = true; giftRevealed = false;
+            setTimeout(() => { resultMsg = null; render(); }, 800);
+            render(); return;
+          }
+          if (opt.giftDelay){
+            finished = true; showGift = false; giftRevealed = false;
+            render();
+            setTimeout(() => { showGift = true; render(); }, opt.giftDelay);
+            return;
+          }
+          if (!opt.result) resultMsg = '謝謝你的回覆！';
+          finished = true; showGift = false; render();
+        }
+      }
+
+      // 入口
+      renderStart();
+    })();
   </script>
 </body>
 </html>
+
 
 
