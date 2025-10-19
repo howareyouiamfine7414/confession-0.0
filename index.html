@@ -127,7 +127,7 @@
         const btn = el('button','startBtn','🔊 點我開啟音效');
         btn.onclick = () => { ensureAudio(); playClick(); soundUnlocked = true; render(); };
         box.appendChild(btn);
-        box.appendChild(el('div','hint','（開啟後才會有啵/叮音效）'));
+        box.appendChild(el('div','hint','0.0'));
         app.appendChild(box);
       }
 
