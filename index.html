@@ -30,8 +30,22 @@
     .end{text-align:center}
     .heart{font-size:28px}
     .giftTip{margin:6px 0 8px;font-size:13px;color:var(--sub)}
-    .giftImg{max-height:360px;width:auto;display:block;margin:0 auto;border-radius:12px;border:1px solid var(--border);
-      filter:blur(6px);transform:scale(.92);transition:filter .25s, transform .25s;cursor:pointer}
+.giftImg{
+  max-height:360px;
+  max-width:90%;
+  width:auto;
+  height:auto;
+  display:block;
+  margin:0 auto;
+  border-radius:12px;
+  border:1px solid var(--border);
+  object-fit:contain;
+  filter:blur(6px);
+  transform:scale(.92);
+  transition:filter .25s, transform .25s;
+  cursor:pointer;
+}
+
     .giftImg.revealed{filter:blur(0);transform:scale(1);cursor:default}
   </style>
 </head>
@@ -101,9 +115,9 @@
       }
       const end = el('div','end');
       if (!showGift){
-        end.appendChild(el('div','heart','💌'));
+        end.appendChild(el('div','heart','0.0'));
         if (resultMsg) end.appendChild(el('div','msg',resultMsg));
-        end.appendChild(el('div','msg','謝謝你的回答！'));
+        end.appendChild(el('div','msg','你走開！！'));
         app.appendChild(end);
       }else{
         end.appendChild(el('div','giftTip','👉 再點擊圖片一次'));
