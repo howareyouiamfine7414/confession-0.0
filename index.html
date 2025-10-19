@@ -124,7 +124,7 @@
       function renderStart(){
         app.innerHTML = '';
         const box = el('div','center');
-        const btn = el('button','startBtn','🔊 點我開啟音效');
+        const btn = el('button','startBtn','點我開始');
         btn.onclick = () => { ensureAudio(); playClick(); soundUnlocked = true; render(); };
         box.appendChild(btn);
         box.appendChild(el('div','hint','0.0'));
