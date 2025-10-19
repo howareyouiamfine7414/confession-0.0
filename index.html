@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>0.0</title>
-  <meta name="description" content="互動小視窗（純原生JS，含禮物揭曉特效）。" />
+  <meta name="description" content="互動小視窗（純原生JS，含音效與禮物揭曉特效）。" />
   <link rel="icon" href="data:," />
   <style>
     :root{
@@ -30,7 +30,6 @@
     .end{text-align:center}
     .heart{font-size:28px}
     .giftTip{margin:6px 0 8px;font-size:13px;color:var(--sub)}
-    /* 修正圖片比例與最大寬度，避免歪掉 */
     .giftImg{
       max-height:360px;
       max-width:90%;
@@ -53,7 +52,7 @@
   <div class="card" id="app"><!-- 內容由 JS 注入 --></div>
 
   <script>
-    // ====== 內容腳本 ======
+    // ====== 流程內容 ======
     const flow = [
       { id:1, q:"第一題：你星期五要跟我出去嗎？",
         opts:[
@@ -89,13 +88,23 @@
         ] },
     ];
 
-    // 圖片來源：上傳 sagami.png 到 repo 根目錄，或改成 Base64 data URL
+    // ====== 音效設定（啵聲） ======
+    const clickSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c8f10b06a.mp3?filename=bubble-pop-1-2022-03-15.mp3");
+    clickSound.volume = 0.4;
+
+    // ====== 禮物圖片 ======
     const GIFT_SRC = "./sagami.png"; // 也可改成 "data:image/png;base64,...."
 
+    // ====== 主程式 ======
     const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text) x.textContent = text; return x; };
     const app = document.getElementById('app');
 
     let currentId = 1, resultMsg = null, pendingNext, finished = false, showGift = false, giftRevealed = false;
+
+    function playClick() {
+      clickSound.currentTime = 0;
+      clickSound.play().catch(()=>{});
+    }
 
     function render(){
       app.innerHTML = '';
@@ -105,7 +114,7 @@
         const box = el('div', 'options');
         step.opts.forEach(opt => {
           const b = el('button','btn'); b.innerHTML = `<div>${opt.label}</div>`;
-          b.onclick = () => handleOption(opt);
+          b.onclick = () => { playClick(); handleOption(opt); };
           box.appendChild(b);
         });
         app.appendChild(box);
@@ -123,7 +132,13 @@
         const img = new Image();
         img.src = GIFT_SRC; img.alt = "gift";
         img.className = 'giftImg' + (giftRevealed ? ' revealed':'');
-        img.onclick = () => { if (!giftRevealed){ giftRevealed = true; img.classList.add('revealed'); } };
+        img.onclick = () => {
+          playClick();
+          if (!giftRevealed){
+            giftRevealed = true;
+            img.classList.add('revealed');
+          }
+        };
         app.appendChild(end);
         end.appendChild(img);
       }
@@ -139,8 +154,7 @@
           render();
           return;
         }
-        // ★ 修正：先 render 顯示 result，再等 1.2s 跳題
-        render();
+        render(); // 先顯示結果
         setTimeout(()=>{
           resultMsg = null;
           currentId = pendingNext;
@@ -168,5 +182,6 @@
   </script>
 </body>
 </html>
+
 
 
