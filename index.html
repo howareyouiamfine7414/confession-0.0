@@ -30,22 +30,22 @@
     .end{text-align:center}
     .heart{font-size:28px}
     .giftTip{margin:6px 0 8px;font-size:13px;color:var(--sub)}
-.giftImg{
-  max-height:360px;
-  max-width:90%;
-  width:auto;
-  height:auto;
-  display:block;
-  margin:0 auto;
-  border-radius:12px;
-  border:1px solid var(--border);
-  object-fit:contain;
-  filter:blur(6px);
-  transform:scale(.92);
-  transition:filter .25s, transform .25s;
-  cursor:pointer;
-}
-
+    /* 修正圖片比例與最大寬度，避免歪掉 */
+    .giftImg{
+      max-height:360px;
+      max-width:90%;
+      width:auto;
+      height:auto;
+      display:block;
+      margin:0 auto;
+      border-radius:12px;
+      border:1px solid var(--border);
+      object-fit:contain;
+      filter:blur(6px);
+      transform:scale(.92);
+      transition:filter .25s, transform .25s;
+      cursor:pointer
+    }
     .giftImg.revealed{filter:blur(0);transform:scale(1);cursor:default}
   </style>
 </head>
@@ -89,9 +89,8 @@
         ] },
     ];
 
-    // 如果你要用 Base64 內嵌圖，把下一行改成：const GIFT_SRC = "data:image/png;base64,....";
-    // 預設用 repo 根目錄的 sagami.png （請上傳圖片檔）
-    const GIFT_SRC = "./sagami.png"; // 或改成 data:image/png;base64,... （從舊版 index.html 複製）
+    // 圖片來源：上傳 sagami.png 到 repo 根目錄，或改成 Base64 data URL
+    const GIFT_SRC = "./sagami.png"; // 也可改成 "data:image/png;base64,...."
 
     const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text) x.textContent = text; return x; };
     const app = document.getElementById('app');
@@ -106,7 +105,7 @@
         const box = el('div', 'options');
         step.opts.forEach(opt => {
           const b = el('button','btn'); b.innerHTML = `<div>${opt.label}</div>`;
-          b.onclick = () => handleOption(opt, step);
+          b.onclick = () => handleOption(opt);
           box.appendChild(b);
         });
         app.appendChild(box);
@@ -115,9 +114,9 @@
       }
       const end = el('div','end');
       if (!showGift){
-        end.appendChild(el('div','heart','🙄'));
+        end.appendChild(el('div','heart','💌'));
         if (resultMsg) end.appendChild(el('div','msg',resultMsg));
-        end.appendChild(el('div','msg','你走開！！'));
+        end.appendChild(el('div','msg','謝謝你的回答！'));
         app.appendChild(end);
       }else{
         end.appendChild(el('div','giftTip','👉 再點擊圖片一次'));
@@ -125,7 +124,8 @@
         img.src = GIFT_SRC; img.alt = "gift";
         img.className = 'giftImg' + (giftRevealed ? ' revealed':'');
         img.onclick = () => { if (!giftRevealed){ giftRevealed = true; img.classList.add('revealed'); } };
-        end.appendChild(img); app.appendChild(end);
+        app.appendChild(end);
+        end.appendChild(img);
       }
     }
 
@@ -133,24 +133,32 @@
       resultMsg = opt.result || null;
       if (typeof opt.next === 'number'){
         pendingNext = opt.next;
-        if (typeof opt.next === 'number'){
-  pendingNext = opt.next;
-  if (!opt.result){
-    currentId = opt.next;
-    pendingNext = undefined;
-    render();
-    return;
-  }
-  render();                  // ★ 立刻重繪，把 result 顯示出來
-  setTimeout(()=>{
-    resultMsg = null;
-    currentId = pendingNext;
-    pendingNext = undefined;
-    render();
-  }, 1200);
+        if (!opt.result){
+          currentId = opt.next;
+          pendingNext = undefined;
+          render();
+          return;
+        }
+        // ★ 修正：先 render 顯示 result，再等 1.2s 跳題
+        render();
+        setTimeout(()=>{
+          resultMsg = null;
+          currentId = pendingNext;
+          pendingNext = undefined;
+          render();
+        }, 1200);
       }else{
-        if (opt.giftNow){ finished = true; showGift = true; giftRevealed = false; setTimeout(()=>{ resultMsg=null; render(); }, 800); render(); return; }
-        if (opt.giftDelay){ finished=true; showGift=false; giftRevealed=false; render(); setTimeout(()=>{ showGift=true; render(); }, opt.giftDelay); return; }
+        if (opt.giftNow){
+          finished = true; showGift = true; giftRevealed = false;
+          setTimeout(()=>{ resultMsg=null; render(); }, 800);
+          render(); return;
+        }
+        if (opt.giftDelay){
+          finished=true; showGift=false; giftRevealed=false;
+          render();
+          setTimeout(()=>{ showGift=true; render(); }, opt.giftDelay);
+          return;
+        }
         if (!opt.result) resultMsg = '謝謝你的回覆！';
         finished = true; showGift = false; render();
       }
@@ -160,4 +168,5 @@
   </script>
 </body>
 </html>
+
 
