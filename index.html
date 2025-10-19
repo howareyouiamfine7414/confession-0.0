@@ -133,8 +133,21 @@
       resultMsg = opt.result || null;
       if (typeof opt.next === 'number'){
         pendingNext = opt.next;
-        if (!opt.result){ currentId = opt.next; pendingNext = undefined; render(); return; }
-        setTimeout(()=>{ resultMsg=null; currentId=pendingNext; pendingNext=undefined; render(); }, 1200);
+        if (typeof opt.next === 'number'){
+  pendingNext = opt.next;
+  if (!opt.result){
+    currentId = opt.next;
+    pendingNext = undefined;
+    render();
+    return;
+  }
+  render();                  // ★ 立刻重繪，把 result 顯示出來
+  setTimeout(()=>{
+    resultMsg = null;
+    currentId = pendingNext;
+    pendingNext = undefined;
+    render();
+  }, 1200);
       }else{
         if (opt.giftNow){ finished = true; showGift = true; giftRevealed = false; setTimeout(()=>{ resultMsg=null; render(); }, 800); render(); return; }
         if (opt.giftDelay){ finished=true; showGift=false; giftRevealed=false; render(); setTimeout(()=>{ showGift=true; render(); }, opt.giftDelay); return; }
