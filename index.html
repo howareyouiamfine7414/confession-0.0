@@ -71,8 +71,101 @@
         ] },
       { id:4, q:"第四題：那你喜歡我嗎？",
         opts:[
-          { id:"4a", label:"很喜翻", result:"我也是
+          { id:"4a", label:"很喜翻", result:"我也是", next:5 },
+          { id:"4b", label:"不太確定，可能要再觀察一下", result:"好ㄅQQ" },
+          { id:"4c", label:"不喜翻", result:"可惡" },
+        ] },
+      { id:5, q:"第五題：那你要跟我交往嗎？",
+        opts:[
+          { id:"5a", label:"好", result:"0.0 <3 <3 <3", next:6 },
+          { id:"5b", label:"不好", result:"GAMEOVER" },
+          { id:"5c", label:"我再想想", result:"GAMEOVER" },
+        ] },
+      { id:6, q:"第六題：送你一個禮物！",
+        opts:[
+          { id:"6a", label:"是什麼！！！？？？", result:"🎁 看看這個！", giftNow:true },
+          { id:"6b", label:"不想知道", result:"管你的 😤", giftDelay:1000 },
+        ] },
+    ];
 
+    // ====== 音效設定 ======
+    const clickSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/15/audio_3c8f10b06a.mp3?filename=bubble-pop-1-2022-03-15.mp3"); // 啵
+    const resultSound = new Audio("https://cdn.pixabay.com/download/audio/2022/03/09/audio_1b7f2fbd88.mp3?filename=correct-answer-2-86842.mp3"); // 叮
+    clickSound.volume = 0.4;
+    resultSound.volume = 0.5;
 
+    const GIFT_SRC = "./sagami.png"; // 或 Base64 圖
 
+    const el = (tag, cls, text) => { const x = document.createElement(tag); if (cls) x.className = cls; if (text) x.textContent = text; return x; };
+    const app = document.getElementById('app');
+    let currentId = 1, resultMsg = null, pendingNext, finished=false, showGift=false, giftRevealed=false;
+
+    function playClick(){ clickSound.currentTime=0; clickSound.play().catch(()=>{}); }
+    function playResult(){ resultSound.currentTime=0; resultSound.play().catch(()=>{}); }
+
+    function render(){
+      app.innerHTML='';
+      const step=flow.find(s=>s.id===currentId);
+      if(!finished && step){
+        app.appendChild(el('h1',null,step.q));
+        const box=el('div','options');
+        step.opts.forEach(opt=>{
+          const b=el('button','btn');
+          b.innerHTML=`<div>${opt.label}</div>`;
+          b.onclick=()=>{ playClick(); handleOption(opt); };
+          box.appendChild(b);
+        });
+        app.appendChild(box);
+        if(resultMsg) app.appendChild(el('div','msg',resultMsg));
+        return;
+      }
+      const end=el('div','end');
+      if(!showGift){
+        end.appendChild(el('div','heart','😖'));
+        if(resultMsg) end.appendChild(el('div','msg',resultMsg));
+        end.appendChild(el('div','msg','謝謝你的回答！'));
+        app.appendChild(end);
+      }else{
+        end.appendChild(el('div','giftTip','👉 再點擊圖片一次'));
+        const img=new Image();
+        img.src=GIFT_SRC; img.alt="gift";
+        img.className='giftImg'+(giftRevealed?' revealed':'');
+        img.onclick=()=>{ playClick(); if(!giftRevealed){ giftRevealed=true; img.classList.add('revealed'); } };
+        app.appendChild(end);
+        end.appendChild(img);
+      }
+    }
+
+    function handleOption(opt){
+      resultMsg=opt.result||null;
+      if(resultMsg) playResult(); // 顯示結果時播放叮聲
+
+      if(typeof opt.next==='number'){
+        pendingNext=opt.next;
+        if(!opt.result){ currentId=opt.next; pendingNext=undefined; render(); return; }
+        render();
+        setTimeout(()=>{
+          resultMsg=null; currentId=pendingNext; pendingNext=undefined; render();
+        },1200);
+      }else{
+        if(opt.giftNow){
+          playResult(); // 🎁 看看這個！也叮
+          finished=true; showGift=true; giftRevealed=false;
+          setTimeout(()=>{ resultMsg=null; render(); },800);
+          render(); return;
+        }
+        if(opt.giftDelay){
+          finished=true; showGift=false; giftRevealed=false;
+          render();
+          setTimeout(()=>{ showGift=true; render(); },opt.giftDelay);
+          return;
+        }
+        if(!opt.result) resultMsg='謝謝你的回覆！';
+        finished=true; showGift=false; render();
+      }
+    }
+    render();
+  </script>
+</body>
+</html>
 
